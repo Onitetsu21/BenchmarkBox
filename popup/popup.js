@@ -460,12 +460,19 @@ async function handleOpenAllFolderLinks() {
 // ============================================
 
 function renderProducts() {
+  console.log('renderProducts: Starting...', { productsCount: state.products.length, currentFolderId: state.currentFolderId });
+
   const container = document.getElementById('products-list');
   const emptyState = document.getElementById('products-empty');
   const titleSpan = document.getElementById('products-folder-name');
   const clearBtn = document.getElementById('btn-clear-folder');
   const openAllBtn = document.getElementById('btn-open-all-folder-links');
-  
+
+  if (!container) {
+    console.error('renderProducts: products-list container not found!');
+    return;
+  }
+
   // Update title
   if (state.currentFolderId) {
     const folder = state.folders.find(f => f.id === state.currentFolderId);
@@ -473,9 +480,10 @@ function renderProducts() {
   } else {
     titleSpan.textContent = 'Tous les produits';
   }
-  
+
   // Filter
   let products = [...state.products];
+  console.log('renderProducts: Initial products:', products.length);
   
   if (state.currentFolderId) {
     products = products.filter(p => p.folderId === state.currentFolderId);
@@ -530,15 +538,19 @@ function renderProducts() {
   });
   
   // Render
+  console.log('renderProducts: After filters, products to render:', products.length);
+
   if (products.length === 0) {
+    console.log('renderProducts: No products to show, displaying empty state');
     container.innerHTML = '';
-    emptyState.classList.remove('bb-hidden');
+    if (emptyState) emptyState.classList.remove('bb-hidden');
     return;
   }
-  
-  emptyState.classList.add('bb-hidden');
+
+  if (emptyState) emptyState.classList.add('bb-hidden');
   container.innerHTML = '';
-  
+
+  console.log('renderProducts: Rendering', products.length, 'products');
   products.forEach(product => {
     const el = document.createElement('div');
     el.className = 'bb-product-card';
@@ -1175,7 +1187,8 @@ function openShoppingListModal(list = null) {
     title.textContent = 'Modifier la liste';
     document.getElementById('shopping-list-id').value = list.id;
     document.getElementById('shopping-list-name').value = list.name;
-    document.getElementById('shopping-list-notes').value = list.notes || '';
+    document.getElementById('shopping-list-budget').value = list.maxBudget || '';
+    document.getElementById('shopping-list-currency').value = list.currency || 'EUR';
     if (list.plannedDate) {
       document.getElementById('date-type-custom').checked = true;
       document.getElementById('shopping-list-custom-date').classList.remove('bb-hidden');
@@ -1197,37 +1210,49 @@ function openShoppingListModal(list = null) {
 
 async function handleShoppingListSubmit(e) {
   e.preventDefault();
-  
+
   const id = document.getElementById('shopping-list-id').value;
   const name = document.getElementById('shopping-list-name').value.trim();
-  const notes = document.getElementById('shopping-list-notes').value.trim();
-  
+  const budgetInput = document.getElementById('shopping-list-budget').value;
+  const maxBudget = budgetInput ? parseFloat(budgetInput) : null;
+  const currency = document.getElementById('shopping-list-currency').value;
+
   const dateType = document.querySelector('input[name="planned-date-type"]:checked')?.value;
   let plannedDate = null;
-  
-  if (dateType === 'today') {
-    plannedDate = new Date().toISOString();
-  } else if (dateType === 'tomorrow') {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    plannedDate = tomorrow.toISOString();
+
+  if (dateType === 'this_week') {
+    const endOfWeek = new Date();
+    endOfWeek.setDate(endOfWeek.getDate() + (7 - endOfWeek.getDay()));
+    plannedDate = endOfWeek.toISOString();
+  } else if (dateType === 'next_week') {
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + (7 - nextWeek.getDay()) + 7);
+    plannedDate = nextWeek.toISOString();
+  } else if (dateType === 'this_month') {
+    const endOfMonth = new Date();
+    endOfMonth.setMonth(endOfMonth.getMonth() + 1, 0);
+    plannedDate = endOfMonth.toISOString();
+  } else if (dateType === 'next_month') {
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 2, 0);
+    plannedDate = nextMonth.toISOString();
   } else if (dateType === 'custom') {
     const customDate = document.getElementById('shopping-list-custom-date').value;
     if (customDate) plannedDate = new Date(customDate).toISOString();
   }
-  
+
   if (!name) {
     Utils.showToast('Le nom est requis', 'error');
     return;
   }
-  
+
   try {
     if (id) {
-      await Storage.updateShoppingList(id, { name, notes, plannedDate });
+      await Storage.updateShoppingList(id, { name, maxBudget, currency, plannedDate });
     } else {
-      await Storage.createShoppingList({ name, notes, plannedDate });
+      await Storage.createShoppingList({ name, maxBudget, currency, plannedDate });
     }
-    
+
     await loadData();
     renderShoppingLists();
     document.getElementById('modal-shopping-list').classList.add('bb-hidden');
