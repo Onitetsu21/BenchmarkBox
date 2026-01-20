@@ -1001,19 +1001,6 @@ function setupShoppingListsListeners() {
     });
   });
   
-  const btnBack = document.getElementById('btn-back-to-lists');
-  if (btnBack) btnBack.addEventListener('click', showShoppingListsOverview);
-  
-  const btnEdit = document.getElementById('btn-edit-shopping-list');
-  if (btnEdit) {
-    btnEdit.addEventListener('click', () => {
-      if (state.currentShoppingListId) {
-        const list = state.shoppingLists.find(l => l.id === state.currentShoppingListId);
-        if (list) openShoppingListModal(list);
-      }
-    });
-  }
-  
   const btnClear = document.getElementById('btn-clear-shopping-list');
   if (btnClear) btnClear.addEventListener('click', handleClearShoppingList);
   
@@ -1030,154 +1017,199 @@ function setupShoppingListsListeners() {
 }
 
 function renderShoppingLists() {
-  const listsContainer = document.getElementById('shopping-lists-container');
-  const emptyState = document.getElementById('shopping-lists-empty');
-  
-  if (!listsContainer) return;
-  
-  if (state.shoppingLists.length === 0) {
-    listsContainer.innerHTML = '';
-    if (emptyState) emptyState.classList.remove('bb-hidden');
-    return;
-  }
-  
-  if (emptyState) emptyState.classList.add('bb-hidden');
-  
-  listsContainer.innerHTML = state.shoppingLists.map(list => {
-    const total = list.items.reduce((sum, item) => {
+  const container = document.getElementById('shopping-lists-container');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  // "Tous" item
+  const allItem = document.createElement('div');
+  allItem.className = `bb-shopping-list-item${!state.currentShoppingListId ? ' active' : ''}`;
+
+  const allItemsCount = state.shoppingLists.reduce((sum, list) => {
+    const items = list.items || [];
+    return sum + items.length;
+  }, 0);
+
+  allItem.innerHTML = `
+    <div class="bb-shopping-list-item-info">
+      <span class="bb-shopping-list-item-name">Toutes les listes</span>
+    </div>
+    <div class="bb-shopping-list-item-meta">
+      <span class="bb-shopping-list-item-count">${allItemsCount}</span>
+    </div>
+  `;
+  allItem.addEventListener('click', () => {
+    state.currentShoppingListId = null;
+    renderShoppingLists();
+    renderShoppingListItems(null);
+  });
+  container.appendChild(allItem);
+
+  // Each shopping list
+  state.shoppingLists.forEach(list => {
+    const items = list.items || [];
+    const isActive = state.currentShoppingListId === list.id;
+
+    const el = document.createElement('div');
+    el.className = `bb-shopping-list-item${isActive ? ' active' : ''}`;
+    el.dataset.listId = list.id;
+
+    const total = items.reduce((sum, item) => {
       const product = state.products.find(p => p.id === item.productId);
-      return sum + (product?.price || 0) * (item.quantity || 1);
+      return sum + (product?.price || 0);
     }, 0);
-    
-    const checkedCount = list.items.filter(i => i.checked).length;
-    const progress = list.items.length > 0 ? Math.round((checkedCount / list.items.length) * 100) : 0;
-    
-    return `
-      <div class="bb-shopping-list-card" data-list-id="${list.id}">
-        <div class="bb-shopping-list-header">
-          <span class="bb-shopping-list-name">${Utils.escapeHtml(list.name)}</span>
-          <span class="bb-shopping-list-total">${Utils.formatPrice(total)}</span>
-        </div>
-        <div class="bb-shopping-list-meta">
-          <span>${list.items.length} produit(s)</span>
-          ${list.plannedDate ? `<span>📅 ${Utils.formatRelativeDate(list.plannedDate)}</span>` : ''}
-        </div>
-        <div class="bb-shopping-list-progress">
-          <div class="bb-progress-bar"><div class="bb-progress-fill" style="width:${progress}%"></div></div>
-          <span class="bb-progress-text">${checkedCount}/${list.items.length}</span>
-        </div>
+
+    el.innerHTML = `
+      <div class="bb-shopping-list-item-info">
+        <span class="bb-shopping-list-item-name">${Utils.escapeHtml(list.name)}</span>
+        <span class="bb-shopping-list-item-total">${Utils.formatPrice(total, list.currency || 'EUR')}</span>
+      </div>
+      <div class="bb-shopping-list-item-meta">
+        <span class="bb-shopping-list-item-date">${list.plannedDate ? Utils.formatRelativeDate(list.plannedDate) : 'Pas de date'}</span>
+        <span class="bb-shopping-list-item-count">${items.length}</span>
       </div>
     `;
-  }).join('');
-  
-  listsContainer.querySelectorAll('.bb-shopping-list-card').forEach(card => {
-    card.addEventListener('click', () => showShoppingListDetail(card.dataset.listId));
-    card.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      const list = state.shoppingLists.find(l => l.id === card.dataset.listId);
-      if (list) showShoppingListContextMenu(e, list);
+
+    el.addEventListener('click', () => {
+      state.currentShoppingListId = state.currentShoppingListId === list.id ? null : list.id;
+      renderShoppingLists();
+      renderShoppingListItems(list);
     });
+
+    el.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      showShoppingListContextMenu(e, list);
+    });
+
+    container.appendChild(el);
   });
 }
 
-function showShoppingListsOverview() {
-  state.currentShoppingListId = null;
-  const overview = document.getElementById('shopping-lists-overview');
-  const detail = document.getElementById('shopping-list-detail');
-  if (overview) overview.classList.remove('bb-hidden');
-  if (detail) detail.classList.add('bb-hidden');
-  renderShoppingLists();
-}
+async function handleClearShoppingList() {
+  if (!state.currentShoppingListId) return;
 
-function showShoppingListDetail(listId) {
-  state.currentShoppingListId = listId;
-  const list = state.shoppingLists.find(l => l.id === listId);
+  const list = state.shoppingLists.find(l => l.id === state.currentShoppingListId);
   if (!list) return;
-  
-  const overview = document.getElementById('shopping-lists-overview');
-  const detail = document.getElementById('shopping-list-detail');
-  if (overview) overview.classList.add('bb-hidden');
-  if (detail) detail.classList.remove('bb-hidden');
-  
-  document.getElementById('shopping-list-detail-name').textContent = list.name;
-  
-  const total = list.items.reduce((sum, item) => {
-    const product = state.products.find(p => p.id === item.productId);
-    return sum + (product?.price || 0) * (item.quantity || 1);
-  }, 0);
-  document.getElementById('shopping-list-detail-total').textContent = Utils.formatPrice(total);
-  
-  renderShoppingListItems(list);
+
+  Utils.showConfirm(`Vider la liste "${list.name}" ?`, async () => {
+    await Storage.clearShoppingList(list.id);
+    await loadData();
+    renderShoppingLists();
+    const updatedList = state.shoppingLists.find(l => l.id === state.currentShoppingListId);
+    if (updatedList) {
+      renderShoppingListItems(updatedList);
+    }
+    Utils.showToast('Liste vidée');
+  });
 }
 
 function renderShoppingListItems(list) {
   const container = document.getElementById('shopping-list-items');
   const emptyState = document.getElementById('shopping-list-items-empty');
+  const titleSpan = document.getElementById('shopping-products-list-name');
+  const clearBtn = document.getElementById('btn-clear-shopping-list');
   const openAllBtn = document.getElementById('btn-open-all-list-links');
 
-  const items = list.items || [];
+  if (!container) return;
 
-  if (items.length === 0) {
+  // Update title
+  if (titleSpan) {
+    if (list) {
+      titleSpan.textContent = list.name;
+    } else {
+      titleSpan.textContent = 'Tous les produits';
+    }
+  }
+
+  // Get products
+  let products = [];
+  if (list) {
+    const items = list.items || [];
+    products = items.map(item => state.products.find(p => p.id === item.productId)).filter(Boolean);
+  } else {
+    // Show all products from all lists
+    const allProductIds = new Set();
+    state.shoppingLists.forEach(sl => {
+      const items = sl.items || [];
+      items.forEach(item => allProductIds.add(item.productId));
+    });
+    products = state.products.filter(p => allProductIds.has(p.id));
+  }
+
+  // Show/hide buttons
+  if (clearBtn) {
+    clearBtn.classList.toggle('bb-hidden', !list || products.length === 0);
+  }
+
+  if (openAllBtn) {
+    openAllBtn.classList.toggle('bb-hidden', products.length === 0);
+  }
+
+  // Render
+  if (products.length === 0) {
     container.innerHTML = '';
     if (emptyState) emptyState.classList.remove('bb-hidden');
-    if (openAllBtn) openAllBtn.classList.add('bb-hidden');
     return;
   }
-  
-  if (emptyState) emptyState.classList.add('bb-hidden');
-  if (openAllBtn) openAllBtn.classList.remove('bb-hidden');
 
-  container.innerHTML = items.map(item => {
-    const product = state.products.find(p => p.id === item.productId);
-    if (!product) return '';
-    
-    return `
-      <div class="bb-shopping-item${item.checked ? ' checked' : ''}" data-item-id="${item.productId}">
-        <label class="bb-shopping-item-check">
-          <input type="checkbox" ${item.checked ? 'checked' : ''}>
-          <span class="bb-checkmark"></span>
-        </label>
-        <div class="bb-shopping-item-info">
-          <span class="bb-shopping-item-name">${Utils.escapeHtml(Utils.truncate(product.name, 40))}</span>
-          <span class="bb-shopping-item-meta">${product.site || ''}</span>
-        </div>
-        <div class="bb-shopping-item-price">${Utils.formatPrice(product.price, product.currency)}</div>
-        <button class="bb-shopping-item-remove" title="Retirer">✕</button>
+  if (emptyState) emptyState.classList.add('bb-hidden');
+  container.innerHTML = '';
+
+  products.forEach(product => {
+    const el = document.createElement('div');
+    el.className = 'bb-shopping-product-card';
+    el.dataset.productId = product.id;
+
+    // Find which lists contain this product
+    const listsWithProduct = state.shoppingLists.filter(sl => {
+      const items = sl.items || [];
+      return items.some(item => item.productId === product.id);
+    });
+
+    el.innerHTML = `
+      <div class="bb-shopping-product-header">
+        <span class="bb-shopping-product-name">${Utils.escapeHtml(Utils.truncate(product.name, 40))}</span>
+        <span class="bb-shopping-product-price">${Utils.formatPrice(product.price, product.currency)}</span>
+      </div>
+      <div class="bb-shopping-product-meta">
+        <span class="bb-shopping-product-site">🌐 ${product.site || 'N/A'}</span>
+        ${listsWithProduct.length > 1 ? `<span class="bb-shopping-product-lists">📋 ${listsWithProduct.length} listes</span>` : ''}
+      </div>
+      <div class="bb-shopping-product-actions">
+        <button class="bb-shopping-product-action-btn" data-action="open" title="Ouvrir">🔗</button>
+        ${list ? `<button class="bb-shopping-product-action-btn bb-btn-danger" data-action="remove" title="Retirer de la liste">✕</button>` : ''}
       </div>
     `;
-  }).join('');
-  
-  container.querySelectorAll('.bb-shopping-item-check input').forEach(cb => {
-    cb.addEventListener('change', async (e) => {
-      const itemEl = e.target.closest('.bb-shopping-item');
-      const productId = itemEl.dataset.itemId;
-      await Storage.toggleShoppingListItem(list.id, productId, e.target.checked);
-      await loadData();
-      const updatedList = state.shoppingLists.find(l => l.id === list.id);
-      if (updatedList) {
-        itemEl.classList.toggle('checked', e.target.checked);
-        const total = updatedList.items.reduce((sum, item) => {
-          const product = state.products.find(p => p.id === item.productId);
-          return sum + (product?.price || 0) * (item.quantity || 1);
-        }, 0);
-        document.getElementById('shopping-list-detail-total').textContent = Utils.formatPrice(total);
-      }
+
+    el.addEventListener('click', (e) => {
+      if (!e.target.closest('button')) openProductModal(product);
     });
-  });
-  
-  container.querySelectorAll('.bb-shopping-item-remove').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
+
+    el.querySelector('[data-action="open"]').addEventListener('click', (e) => {
       e.stopPropagation();
-      const itemEl = e.target.closest('.bb-shopping-item');
-      const productId = itemEl.dataset.itemId;
-      await Storage.removeProductFromShoppingList(list.id, productId);
-      await loadData();
-      const updatedList = state.shoppingLists.find(l => l.id === list.id);
-      if (updatedList) {
-        renderShoppingListItems(updatedList);
-        renderProducts();
+      if (product.url) {
+        browserAPI.runtime.sendMessage({ action: 'openTab', url: product.url });
+      } else {
+        Utils.showToast('Aucun lien', 'warning');
       }
     });
+
+    if (list) {
+      const removeBtn = el.querySelector('[data-action="remove"]');
+      if (removeBtn) {
+        removeBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          await Storage.removeProductFromShoppingList(list.id, product.id);
+          await loadData();
+          renderShoppingLists();
+          renderShoppingListItems(list);
+          Utils.showToast('Produit retiré');
+        });
+      }
+    }
+
+    container.appendChild(el);
   });
 }
 
