@@ -18,6 +18,16 @@
   --primary: #F42364;
   --primary-light: rgba(244, 35, 100, 0.1);
   --primary-hover: #E91B57;
+
+  /* Folders Colors (Pink) */
+  --folders-primary: #F42364;
+  --folders-light: rgba(244, 35, 100, 0.1);
+  --folders-hover: #E91B57;
+
+  /* Shopping Colors (Purple) */
+  --shopping-primary: #8b5cf6;
+  --shopping-light: rgba(139, 92, 246, 0.1);
+  --shopping-hover: #7c3aed;
   
   /* Base Colors - Better contrast */
   --bg-primary: #ffffff;
@@ -1855,4 +1865,370 @@ body {
 /* Selection */
 ::selection {
   background: rgba(244, 35, 100, 0.2);
+}
+
+/* ========================================
+   Shopping Tab - Purple Gradient Background
+======================================== */
+#tab-content-shopping {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(124, 58, 237, 0.1) 100%);
+}
+
+/* ========================================
+   Shopping Lists Section (like Folders)
+======================================== */
+.bb-shopping-lists-section {
+  flex: 0 0 auto;
+  max-height: 180px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-light);
+  overflow: hidden;
+}
+
+.bb-shopping-lists-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+}
+
+.bb-shopping-lists-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+}
+
+.bb-shopping-lists-add-btn {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--shopping-primary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.bb-shopping-lists-add-btn:hover {
+  background: var(--shopping-light);
+  transform: rotate(90deg);
+}
+
+.bb-shopping-lists-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+/* ========================================
+   Shopping List Item (like Folder Item)
+======================================== */
+.bb-shopping-list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 2px;
+}
+
+.bb-shopping-list-item:hover {
+  background: var(--shopping-light);
+}
+
+.bb-shopping-list-item.active {
+  background: var(--shopping-light);
+  border-left: 3px solid var(--shopping-primary);
+  padding-left: 7px;
+}
+
+.bb-shopping-list-item.active .bb-shopping-list-item-name {
+  font-weight: 600;
+  color: var(--shopping-primary);
+}
+
+.bb-shopping-list-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bb-shopping-list-item-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bb-shopping-list-item-total {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--shopping-primary);
+  white-space: nowrap;
+}
+
+.bb-shopping-list-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.bb-shopping-list-item-date {
+  white-space: nowrap;
+}
+
+.bb-shopping-list-item-count {
+  min-width: 22px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--shopping-light);
+  color: var(--shopping-primary);
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 6px;
+}
+
+/* ========================================
+   Shopping Products Section
+======================================== */
+.bb-shopping-products-section {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 100px;
+  overflow: hidden;
+}
+
+.bb-shopping-products-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.bb-shopping-products-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.bb-shopping-products-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bb-shopping-products-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ========================================
+   Shopping Product Card (Compact)
+======================================== */
+.bb-shopping-product-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bb-shopping-product-card:hover {
+  border-color: var(--shopping-primary);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.1);
+  transform: translateY(-1px);
+}
+
+.bb-shopping-product-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bb-shopping-product-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bb-shopping-product-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--shopping-primary);
+  white-space: nowrap;
+}
+
+.bb-shopping-product-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.bb-shopping-product-site {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bb-shopping-product-lists {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: var(--shopping-light);
+  color: var(--shopping-primary);
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.bb-shopping-product-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-light);
+}
+
+.bb-shopping-product-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--bg-secondary);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--shopping-primary);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.bb-shopping-product-action-btn:hover {
+  background: var(--shopping-light);
+  transform: scale(1.1);
+}
+
+.bb-shopping-product-action-btn.bb-btn-danger {
+  color: var(--danger);
+}
+
+.bb-shopping-product-action-btn.bb-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ========================================
+   Update Folders to use Pink
+======================================== */
+.bb-folder-item.active {
+  background: var(--folders-light);
+  border-left: 3px solid var(--folders-primary);
+}
+
+.bb-folder-item.active .bb-folder-item-name {
+  color: var(--folders-primary);
+}
+
+.bb-folder-item:hover {
+  background: var(--folders-light);
+}
+
+.bb-folders-add-btn {
+  color: var(--folders-primary);
+}
+
+.bb-folders-add-btn:hover {
+  background: var(--folders-light);
+}
+
+.bb-folder-item-count {
+  background: var(--folders-light);
+  color: var(--folders-primary);
+}
+
+/* ========================================
+   Fix Product Action Buttons - Purple
+======================================== */
+.bb-product-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--bg-secondary);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--shopping-primary);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.bb-product-action-btn:hover {
+  background: var(--shopping-light);
+  color: var(--shopping-hover);
+  transform: scale(1.05);
+}
+
+.bb-product-action-btn.in-list {
+  background: var(--shopping-light);
+  color: var(--shopping-primary);
+}
+
+.bb-product-cart-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--shopping-primary);
+  color: white;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 4px;
 }
