@@ -460,12 +460,19 @@ async function handleOpenAllFolderLinks() {
 // ============================================
 
 function renderProducts() {
+  console.log('renderProducts: Starting...', { productsCount: state.products.length, currentFolderId: state.currentFolderId });
+
   const container = document.getElementById('products-list');
   const emptyState = document.getElementById('products-empty');
   const titleSpan = document.getElementById('products-folder-name');
   const clearBtn = document.getElementById('btn-clear-folder');
   const openAllBtn = document.getElementById('btn-open-all-folder-links');
-  
+
+  if (!container) {
+    console.error('renderProducts: products-list container not found!');
+    return;
+  }
+
   // Update title
   if (state.currentFolderId) {
     const folder = state.folders.find(f => f.id === state.currentFolderId);
@@ -473,9 +480,10 @@ function renderProducts() {
   } else {
     titleSpan.textContent = 'Tous les produits';
   }
-  
+
   // Filter
   let products = [...state.products];
+  console.log('renderProducts: Initial products:', products.length);
   
   if (state.currentFolderId) {
     products = products.filter(p => p.folderId === state.currentFolderId);
@@ -530,15 +538,19 @@ function renderProducts() {
   });
   
   // Render
+  console.log('renderProducts: After filters, products to render:', products.length);
+
   if (products.length === 0) {
+    console.log('renderProducts: No products to show, displaying empty state');
     container.innerHTML = '';
-    emptyState.classList.remove('bb-hidden');
+    if (emptyState) emptyState.classList.remove('bb-hidden');
     return;
   }
-  
-  emptyState.classList.add('bb-hidden');
+
+  if (emptyState) emptyState.classList.add('bb-hidden');
   container.innerHTML = '';
-  
+
+  console.log('renderProducts: Rendering', products.length, 'products');
   products.forEach(product => {
     const el = document.createElement('div');
     el.className = 'bb-product-card';
@@ -692,7 +704,10 @@ function showProductContextMenu(e, product) {
 }
 
 function getProductShoppingListInfo(productId) {
-  const lists = state.shoppingLists.filter(list => list.items.some(item => item.productId === productId));
+  const lists = state.shoppingLists.filter(list => {
+    if (!list.items || !Array.isArray(list.items)) return false;
+    return list.items.some(item => item.productId === productId);
+  });
   return { count: lists.length, lists };
 }
 
@@ -1099,8 +1114,10 @@ function renderShoppingListItems(list) {
   const container = document.getElementById('shopping-list-items');
   const emptyState = document.getElementById('shopping-list-items-empty');
   const openAllBtn = document.getElementById('btn-open-all-list-links');
-  
-  if (list.items.length === 0) {
+
+  const items = list.items || [];
+
+  if (items.length === 0) {
     container.innerHTML = '';
     if (emptyState) emptyState.classList.remove('bb-hidden');
     if (openAllBtn) openAllBtn.classList.add('bb-hidden');
@@ -1109,8 +1126,8 @@ function renderShoppingListItems(list) {
   
   if (emptyState) emptyState.classList.add('bb-hidden');
   if (openAllBtn) openAllBtn.classList.remove('bb-hidden');
-  
-  container.innerHTML = list.items.map(item => {
+
+  container.innerHTML = items.map(item => {
     const product = state.products.find(p => p.id === item.productId);
     if (!product) return '';
     
@@ -1175,7 +1192,8 @@ function openShoppingListModal(list = null) {
     title.textContent = 'Modifier la liste';
     document.getElementById('shopping-list-id').value = list.id;
     document.getElementById('shopping-list-name').value = list.name;
-    document.getElementById('shopping-list-notes').value = list.notes || '';
+    document.getElementById('shopping-list-budget').value = list.maxBudget || '';
+    document.getElementById('shopping-list-currency').value = list.currency || 'EUR';
     if (list.plannedDate) {
       document.getElementById('date-type-custom').checked = true;
       document.getElementById('shopping-list-custom-date').classList.remove('bb-hidden');
@@ -1197,37 +1215,49 @@ function openShoppingListModal(list = null) {
 
 async function handleShoppingListSubmit(e) {
   e.preventDefault();
-  
+
   const id = document.getElementById('shopping-list-id').value;
   const name = document.getElementById('shopping-list-name').value.trim();
-  const notes = document.getElementById('shopping-list-notes').value.trim();
-  
+  const budgetInput = document.getElementById('shopping-list-budget').value;
+  const maxBudget = budgetInput ? parseFloat(budgetInput) : null;
+  const currency = document.getElementById('shopping-list-currency').value;
+
   const dateType = document.querySelector('input[name="planned-date-type"]:checked')?.value;
   let plannedDate = null;
-  
-  if (dateType === 'today') {
-    plannedDate = new Date().toISOString();
-  } else if (dateType === 'tomorrow') {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    plannedDate = tomorrow.toISOString();
+
+  if (dateType === 'this_week') {
+    const endOfWeek = new Date();
+    endOfWeek.setDate(endOfWeek.getDate() + (7 - endOfWeek.getDay()));
+    plannedDate = endOfWeek.toISOString();
+  } else if (dateType === 'next_week') {
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + (7 - nextWeek.getDay()) + 7);
+    plannedDate = nextWeek.toISOString();
+  } else if (dateType === 'this_month') {
+    const endOfMonth = new Date();
+    endOfMonth.setMonth(endOfMonth.getMonth() + 1, 0);
+    plannedDate = endOfMonth.toISOString();
+  } else if (dateType === 'next_month') {
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 2, 0);
+    plannedDate = nextMonth.toISOString();
   } else if (dateType === 'custom') {
     const customDate = document.getElementById('shopping-list-custom-date').value;
     if (customDate) plannedDate = new Date(customDate).toISOString();
   }
-  
+
   if (!name) {
     Utils.showToast('Le nom est requis', 'error');
     return;
   }
-  
+
   try {
     if (id) {
-      await Storage.updateShoppingList(id, { name, notes, plannedDate });
+      await Storage.updateShoppingList(id, { name, maxBudget, currency, plannedDate });
     } else {
-      await Storage.createShoppingList({ name, notes, plannedDate });
+      await Storage.createShoppingList({ name, maxBudget, currency, plannedDate });
     }
-    
+
     await loadData();
     renderShoppingLists();
     document.getElementById('modal-shopping-list').classList.add('bb-hidden');
@@ -1323,13 +1353,14 @@ function openAddToListModal(product) {
     list.innerHTML = '<p class="bb-text-muted">Aucune liste. Créez-en une !</p>';
   } else {
     list.innerHTML = state.shoppingLists.map(sl => {
-      const isInList = sl.items.some(item => item.productId === product.id);
+      const items = sl.items || [];
+      const isInList = items.some(item => item.productId === product.id);
       return `
         <label class="bb-list-option">
           <input type="checkbox" value="${sl.id}" ${isInList ? 'checked' : ''}>
           <span class="bb-list-option-info">
             <span class="bb-list-option-name">${Utils.escapeHtml(sl.name)}</span>
-            <span class="bb-list-option-meta">${sl.items.length} produit(s)</span>
+            <span class="bb-list-option-meta">${items.length} produit(s)</span>
           </span>
         </label>
       `;
@@ -1349,9 +1380,10 @@ async function handleConfirmAddToList() {
     const listId = cb.value;
     const list = state.shoppingLists.find(l => l.id === listId);
     if (!list) continue;
-    
-    const isIn = list.items.some(item => item.productId === productId);
-    
+
+    const items = list.items || [];
+    const isIn = items.some(item => item.productId === productId);
+
     if (cb.checked && !isIn) {
       await Storage.addProductToShoppingList(listId, productId);
       added++;
