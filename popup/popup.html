@@ -180,7 +180,7 @@
               </svg>
             </button>
           </div>
-          <div id="shopping-lists" class="bb-shopping-lists">
+          <div id="shopping-lists-container" class="bb-shopping-lists">
             <!-- Shopping lists will be rendered here -->
           </div>
           <div id="shopping-lists-empty" class="bb-empty-state bb-hidden">
@@ -273,10 +273,10 @@
             </button>
           </div>
           </div>
-          <div id="shopping-list-products" class="bb-products-list">
+          <div id="shopping-list-items" class="bb-products-list">
             <!-- Products will be rendered here -->
           </div>
-          <div id="shopping-list-products-empty" class="bb-empty-state bb-hidden">
+          <div id="shopping-list-items-empty" class="bb-empty-state bb-hidden">
             <p>Aucun produit dans cette liste</p>
             <span class="bb-empty-hint">Ajoutez des produits depuis l'onglet Dossiers</span>
           </div>
@@ -333,11 +333,11 @@
           
           <div class="bb-form-group">
             <label>Tags</label>
-            <div id="product-tags" class="bb-tags-input">
-              <div id="product-tags-selected" class="bb-tags-selected"></div>
-              <input type="text" id="product-tag-input" class="bb-tag-input" placeholder="Ajouter un tag...">
+            <div class="bb-tags-input-wrapper">
+              <div id="selected-tags" class="bb-tags-selected"></div>
+              <input type="text" id="product-tags-input" class="bb-tag-input" placeholder="Ajouter un tag...">
+              <div id="tags-dropdown" class="bb-tags-dropdown bb-hidden"></div>
             </div>
-            <div id="product-tags-suggestions" class="bb-tags-suggestions bb-hidden"></div>
           </div>
           
           <div class="bb-form-group">
@@ -396,7 +396,7 @@
           
           <div class="bb-form-group">
             <label class="bb-checkbox-label">
-              <input type="checkbox" id="folder-default">
+              <input type="checkbox" id="folder-is-default">
               <span>Définir comme dossier par défaut</span>
             </label>
           </div>
@@ -573,27 +573,27 @@
             <label>Date d'achat prévue</label>
             <div class="bb-radio-group">
               <label class="bb-radio-label">
-                <input type="radio" name="planned-date-type" value="none" checked>
+                <input type="radio" id="date-type-none" name="planned-date-type" value="none" checked>
                 <span>Pas de date</span>
               </label>
               <label class="bb-radio-label">
-                <input type="radio" name="planned-date-type" value="this_week">
+                <input type="radio" id="date-type-this-week" name="planned-date-type" value="this_week">
                 <span>Cette semaine</span>
               </label>
               <label class="bb-radio-label">
-                <input type="radio" name="planned-date-type" value="next_week">
+                <input type="radio" id="date-type-next-week" name="planned-date-type" value="next_week">
                 <span>Semaine prochaine</span>
               </label>
               <label class="bb-radio-label">
-                <input type="radio" name="planned-date-type" value="this_month">
+                <input type="radio" id="date-type-this-month" name="planned-date-type" value="this_month">
                 <span>Ce mois-ci</span>
               </label>
               <label class="bb-radio-label">
-                <input type="radio" name="planned-date-type" value="next_month">
+                <input type="radio" id="date-type-next-month" name="planned-date-type" value="next_month">
                 <span>Mois prochain</span>
               </label>
               <label class="bb-radio-label">
-                <input type="radio" name="planned-date-type" value="custom">
+                <input type="radio" id="date-type-custom" name="planned-date-type" value="custom">
                 <span>Date précise</span>
               </label>
             </div>
@@ -621,7 +621,7 @@
         </div>
         <div class="bb-modal-body">
           <input type="hidden" id="add-to-list-product-id">
-          <div id="add-to-list-lists" class="bb-shopping-lists-select">
+          <div id="add-to-list-options" class="bb-shopping-lists-select">
             <!-- Lists will be rendered here -->
           </div>
           <button id="btn-create-list-from-modal" class="bb-btn bb-btn-ghost bb-btn-full">
