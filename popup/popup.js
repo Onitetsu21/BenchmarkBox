@@ -704,7 +704,10 @@ function showProductContextMenu(e, product) {
 }
 
 function getProductShoppingListInfo(productId) {
-  const lists = state.shoppingLists.filter(list => list.items.some(item => item.productId === productId));
+  const lists = state.shoppingLists.filter(list => {
+    if (!list.items || !Array.isArray(list.items)) return false;
+    return list.items.some(item => item.productId === productId);
+  });
   return { count: lists.length, lists };
 }
 
@@ -1111,8 +1114,10 @@ function renderShoppingListItems(list) {
   const container = document.getElementById('shopping-list-items');
   const emptyState = document.getElementById('shopping-list-items-empty');
   const openAllBtn = document.getElementById('btn-open-all-list-links');
-  
-  if (list.items.length === 0) {
+
+  const items = list.items || [];
+
+  if (items.length === 0) {
     container.innerHTML = '';
     if (emptyState) emptyState.classList.remove('bb-hidden');
     if (openAllBtn) openAllBtn.classList.add('bb-hidden');
@@ -1121,8 +1126,8 @@ function renderShoppingListItems(list) {
   
   if (emptyState) emptyState.classList.add('bb-hidden');
   if (openAllBtn) openAllBtn.classList.remove('bb-hidden');
-  
-  container.innerHTML = list.items.map(item => {
+
+  container.innerHTML = items.map(item => {
     const product = state.products.find(p => p.id === item.productId);
     if (!product) return '';
     
@@ -1348,13 +1353,14 @@ function openAddToListModal(product) {
     list.innerHTML = '<p class="bb-text-muted">Aucune liste. Créez-en une !</p>';
   } else {
     list.innerHTML = state.shoppingLists.map(sl => {
-      const isInList = sl.items.some(item => item.productId === product.id);
+      const items = sl.items || [];
+      const isInList = items.some(item => item.productId === product.id);
       return `
         <label class="bb-list-option">
           <input type="checkbox" value="${sl.id}" ${isInList ? 'checked' : ''}>
           <span class="bb-list-option-info">
             <span class="bb-list-option-name">${Utils.escapeHtml(sl.name)}</span>
-            <span class="bb-list-option-meta">${sl.items.length} produit(s)</span>
+            <span class="bb-list-option-meta">${items.length} produit(s)</span>
           </span>
         </label>
       `;
@@ -1374,9 +1380,10 @@ async function handleConfirmAddToList() {
     const listId = cb.value;
     const list = state.shoppingLists.find(l => l.id === listId);
     if (!list) continue;
-    
-    const isIn = list.items.some(item => item.productId === productId);
-    
+
+    const items = list.items || [];
+    const isIn = items.some(item => item.productId === productId);
+
     if (cb.checked && !isIn) {
       await Storage.addProductToShoppingList(listId, productId);
       added++;
